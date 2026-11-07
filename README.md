@@ -1,20 +1,21 @@
-# DOOM for the SNES — Super FX 2 (GSU-2)
+# DOOM for the SNES — Super FX 2 (GSU-2): 4MB sd2snes & Ares version
 
 SNES **DOOM** rebuilt from the 1995 [`DOOM-FX`](https://github.com/RandalLinden/DOOM-FX) 
 source (Randy Linden's "Reality Engine") with [`asar`](https://github.com/RPGHacker/asar).
+
+> **This is the `sd2snes-gsu-8mb` branch.** Its ROMs use the 8 MB map of
+> `GSU_4MB_LAYOUT_SPEC.md`: 4 MB the Super FX can read (two 2 MB windows),
+> which runs on **ares** and the **sd2snes / FXPak Pro** only (unclear if on real
+> Super FX 2 hardware, nor on MiSTer: they wrap at 2 MB). See *Cartridge and
+> memory map*. The main line stays within the official known 2 MB the Super FX
+> reads.
+
 
 It adds the content and fixes of *The Ultimate DOOM* cartridge (FX3) but stays 
 on a **Super FX 2**. 
 
 This engine also builds DOOM II, TNT: Evilution and Plutonia
 from their WADs, and a ROM of the shareware DOOM wad.
-
-> **This is the `gsu-8mb` branch.** Its ROMs use the 8 MB map of
-> `GSU_4MB_LAYOUT_SPEC.md`: 4 MB the Super FX can read (two 2 MB windows),
-> which runs on **ares** and the **sd2snes / FXPak Pro** only (not on real
-> Super FX 2 hardware, nor on MiSTer: they wrap at 2 MB). See *Cartridge and
-> memory map*. The main line stays within the official 2 MB the Super FX
-> reads.
 
 > **No game data is included**.
 > There is some retouched menu art in `tools/menus/` and the shareware

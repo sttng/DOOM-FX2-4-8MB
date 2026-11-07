@@ -284,26 +284,26 @@ Plutonia MAP06, 09, 11, 13, 18, 25, 26, 27):
 
 The game skips empty level slots.
 
-## Shareware DOOM and the DOOM II demo (2 MB sets)
+## Shareware DOOM (a 2 MB set)
 
-The same engine and source build the shareware and demo sets, which fit the
-original cartridge's 2 MB. On this branch they are 8 MB files too, laid out
-like the others (`layout.py` does not read the `data/regions.json` the
-scripts below still write). Each set lives in its own data directory, as the
-DOOM II sets do; switch with the `data` link.
+The same engine and source build the shareware set, which fits the original
+cartridge's 2 MB. On this branch it is an 8 MB file too, laid out like the
+others (`layout.py` does not read the `data/regions.json` the script below
+still writes). The set lives in its own data directory, as the DOOM II sets
+do; switch with the `data` link.
 
 Data-set flags in `levels.inc`: `!RLEPISODES` (episodes offered, score
 screens kept), `!RLNOPLASMABFG` (no plasma/BFG frames), `!RLORDERSCREEN`
 (every episode in the menu; the missing ones, and the end of the game after
 the end text, show the order screen, `wad2art.py --order HELP2`).
 
-| | original cartridge | shareware | DOOM II demo | full build |
-|---|---|---|---|---|
-| ROM | 2 MB | 8 MB file (1.4 MB used) | 8 MB file (1.6 MB used) | 8 MB file |
-| levels | 22 | 9 | 3 | 36 (DOOM II: 32) |
-| GSU RAM | 64 KB, no battery | 128 KB, battery | 128 KB, battery | 128 KB, battery |
+| | original cartridge | shareware | full build |
+|---|---|---|---|
+| ROM | 2 MB | 8 MB file (1.4 MB used) | 8 MB file |
+| levels | 22 | 9 | 36 (DOOM II: 32) |
+| GSU RAM | 64 KB, no battery | 128 KB, battery | 128 KB, battery |
 
-(The main line builds these two as 2 MB ROMs, within the Super FX's official limits.)
+(The main line builds it as a 2 MB ROM, within the Super FX's official limits.)
 
 **Shareware DOOM:** Episode 1, *Knee-Deep in the Dead* (E1M1–E1M9), from
 the shareware `DOOM1.WAD` (v1.9).
@@ -338,20 +338,6 @@ Tested in MesenCE: boot → title → E1M1, the episode menu, E1M8's end text �
 order screen → title, every map, save/load on all nine maps. The shareware
 licence allows passing on `DOOM1.WAD` unchanged only: a ROM built from it is
 for your own use.
-
-**DOOM II demo:** MAP01–MAP03 (*Entryway*, *Underhalls*, *The Gantlet*).
-
-```sh
-cp -a gamedata-doom2 gamedata-doom2demo && ln -sfn gamedata-doom2demo data   # a copy of a DOOM II data set (make doom2)
-make demo WAD=DOOM2.WAD
-```
-
-`tools/mk2mb.py demo` keeps the first three level slots of a DOOM II data set
-(`--maps N`: the first N); MAP03 ends the game (end text, then the title).
-The demo plays `DOOM2.WAD`'s music (title, intermission and the three maps'
-songs; `tools/music/wad2music.py`).
-Tested in MesenCE: MAP01 → MAP02 → MAP03 → end text → title, and save/load
-on all three maps.
 
 ## Engine limits
 
@@ -516,7 +502,7 @@ src/engine/         the original modules + savegame.asm, rumble.asm, order.asm;
 data/               generated game data (not distributed)
 tools/              build, conversion and test tools
 tools/doomfx-src/   the files of the DOOM-FX source release `make data` reads
-tools/music/        the music converter and song tools (make wadmusic, make demo)
+tools/music/        the music converter and song tools (make wadmusic)
 tools/test/         test and analysis scripts (not used by the build)
 tools/legacy/       the xa/xl reference assembler and the xa → asar translator
 ```
@@ -559,7 +545,7 @@ Every script's header has the details and its usage.
 | `wad2art.py` | title screen, menus, menu skull, fonts, score screens, level names |
 | `wad2cut.py` | weapon HUD frames (the CUT format; `show` renders a weapon) |
 | `wad2soundfx.py` | sound effects (BRR) |
-| `mk2mb.py` | `shareware` / `demo`: cuts a data set down to the shareware or demo set |
+| `mk2mb.py` | `shareware`: cuts a data set down to the shareware set |
 
 | Libraries | |
 |---|---|

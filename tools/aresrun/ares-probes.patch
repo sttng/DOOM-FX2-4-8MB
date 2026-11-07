@@ -1,0 +1,155 @@
+diff --git a/ares/sfc/coprocessor/superfx/bus.cpp b/ares/sfc/coprocessor/superfx/bus.cpp
+index d7112b7..d70e7b9 100644
+--- a/ares/sfc/coprocessor/superfx/bus.cpp
++++ b/ares/sfc/coprocessor/superfx/bus.cpp
+@@ -38,7 +38,9 @@ auto SuperFX::CPURAM::read(n24 address, n8 data) -> n8 {
+   return superfx.ram.read(address, data);
+ }
+ 
++void (*ares_gsuram_hook)(int who, u32 address, u8 data) = nullptr;   //(headless probe)
+ auto SuperFX::CPURAM::write(n24 address, n8 data) -> void {
++  if(ares_gsuram_hook) ares_gsuram_hook(0, address & superfx.ramMask, data);
+   superfx.ram.write(address, data);
+ }
+ 
+diff --git a/ares/sfc/coprocessor/superfx/memory.cpp b/ares/sfc/coprocessor/superfx/memory.cpp
+index b20e35e..2418e4d 100644
+--- a/ares/sfc/coprocessor/superfx/memory.cpp
++++ b/ares/sfc/coprocessor/superfx/memory.cpp
+@@ -1,4 +1,6 @@
++void (*ares_gsu_read_hook)(u32 address, int fetch) = nullptr; int ares_gsu_fetch = 0;   //(headless probe: GSU reads)
+ auto SuperFX::read(n24 address, n8 data) -> n8 {
++  if(ares_gsu_read_hook) ares_gsu_read_hook(address, ares_gsu_fetch);
+   if((address & 0xc00000) == 0x000000) {  //$00-3f:0000-7fff,:8000-ffff
+     while(!regs.scmr.ron) {
+       step(6);
+@@ -23,7 +25,7 @@ auto SuperFX::read(n24 address, n8 data) -> n8 {
+       synchronize(cpu);
+       if(scheduler.synchronizing()) break;
+     }
+-    return ram.read(address & ramMask);
++    { extern void (*ares_gsuram_hook)(int, u32, u8); n8 v = ram.read(address & ramMask); if(ares_gsuram_hook) ares_gsuram_hook(2, address & ramMask, v); return v; }
+   }
+ 
+   return data;
+@@ -36,6 +38,7 @@ auto SuperFX::write(n24 address, n8 data) -> void {
+       synchronize(cpu);
+       if(scheduler.synchronizing()) break;
+     }
++    { extern void (*ares_gsuram_hook)(int, u32, u8); if(ares_gsuram_hook) ares_gsuram_hook(1, address & ramMask, data); }
+     return ram.write(address & ramMask, data);
+   }
+ }
+@@ -48,7 +51,7 @@ auto SuperFX::readOpcode(n16 address) -> n8 {
+       u32 sp = (regs.pbr << 16) + ((regs.cbr + dp) & 0xfff0);
+       for(u32 n : range(16)) {
+         step(regs.clsr ? 5 : 6);
+-        cache.buffer[dp++] = read(sp++);
++        ares_gsu_fetch = 1; cache.buffer[dp++] = read(sp++); ares_gsu_fetch = 0;
+       }
+       cache.valid[offset >> 4] = true;
+     } else {
+@@ -61,12 +64,12 @@ auto SuperFX::readOpcode(n16 address) -> n8 {
+     //$00-5f:0000-ffff ROM
+     syncROMBuffer();
+     step(regs.clsr ? 5 : 6);
+-    return read(regs.pbr << 16 | address);
++    { ares_gsu_fetch = 1; n8 v = read(regs.pbr << 16 | address); ares_gsu_fetch = 0; return v; }
+   } else {
+     //$60-7f:0000-ffff RAM
+     syncRAMBuffer();
+     step(regs.clsr ? 5 : 6);
+-    return read(regs.pbr << 16 | address);
++    { ares_gsu_fetch = 1; n8 v = read(regs.pbr << 16 | address); ares_gsu_fetch = 0; return v; }
+   }
+ }
+ 
+diff --git a/ares/sfc/coprocessor/superfx/superfx.cpp b/ares/sfc/coprocessor/superfx/superfx.cpp
+index a3a0290..3eb293d 100644
+--- a/ares/sfc/coprocessor/superfx/superfx.cpp
++++ b/ares/sfc/coprocessor/superfx/superfx.cpp
+@@ -25,9 +25,17 @@ auto SuperFX::unload() -> void {
+   Thread::destroy();
+ }
+ 
++FILE* ares_gsu_trace = nullptr; long ares_gsu_trace_left = 0;   //(headless probe)
+ auto SuperFX::main() -> void {
+   if(regs.sfr.g == 0) return step(6);
+ 
++  if(ares_gsu_trace && ares_gsu_trace_left > 0) {
++    ares_gsu_trace_left--;
++    fprintf(ares_gsu_trace, "%02X:%04X", (u32)regs.pbr, (u32)regs.r[15].data);
++    for(u32 n = 0; n < 15; n++) fprintf(ares_gsu_trace, " %04X", (u32)regs.r[n].data);
++    fprintf(ares_gsu_trace, " rb%u ra%04X", (u32)regs.rambr, (u32)regs.ramaddr);
++    fprintf(ares_gsu_trace, " %c%c%c%c\n", regs.sfr.z ? 'Z' : 'z', regs.sfr.cy ? 'C' : 'c', regs.sfr.s ? 'S' : 's', regs.sfr.ov ? 'V' : 'v');
++  }
+   auto opcode = peekpipe();
+   debugger.instruction();
+   instruction(opcode);
+diff --git a/ares/sfc/cpu/io.cpp b/ares/sfc/cpu/io.cpp
+index c6aa3b8..d4323f9 100644
+--- a/ares/sfc/cpu/io.cpp
++++ b/ares/sfc/cpu/io.cpp
+@@ -7,7 +7,15 @@ auto CPU::readAPU(n24 address, n8 data) -> n8 {
+   return smp.portRead(address.bit(0,1));
+ }
+ 
++void (*ares_io_read_hook)(u32 address, u32 vcounter, u32 hcounter, u8 value) = nullptr;   //(headless probe)
+ auto CPU::readCPU(n24 address, n8 data) -> n8 {
++  if(ares_io_read_hook && (((n16)address >= 0x4016 && (n16)address <= 0x4017) || ((n16)address >= 0x4212 && (n16)address <= 0x421f))) {
++    auto hook = ares_io_read_hook; ares_io_read_hook = nullptr;
++    n8 v = readCPU(address, data);
++    ares_io_read_hook = hook;
++    hook((n16)address, vcounter(), hcounter(), v);
++    return v;
++  }
+   switch((n16)address) {
+   case 0x2180:  //WMDATA
+     return bus.read(0x7e0000 | io.wramAddress++, data);
+@@ -89,8 +97,10 @@ auto CPU::readDMA(n24 address, n8 data) -> n8 {
+   return data;
+ }
+ 
++void (*ares_wram_write_hook)(u32 address, u8 data) = nullptr;   //(headless probe)
+ auto CPU::writeRAM(n24 address, n8 data) -> void {
+   wram[address] = data;
++  if(ares_wram_write_hook) ares_wram_write_hook(address, data);
+ }
+ 
+ auto CPU::writeAPU(n24 address, n8 data) -> void {
+diff --git a/ares/sfc/memory/inline.hpp b/ares/sfc/memory/inline.hpp
+index 6b4b4b1..5683aaf 100644
+--- a/ares/sfc/memory/inline.hpp
++++ b/ares/sfc/memory/inline.hpp
+@@ -24,6 +24,7 @@ alwaysinline auto Bus::reduce(u32 address, u32 mask) -> u32 {
+ }
+ 
+ alwaysinline auto Bus::read(n24 address, n8 data) -> n8 {
++  if(ares_bus_read_hook) ares_bus_read_hook(address);
+   if(!(address & 0x40e000)) address = 0x7e0000 | (address & 0x1fff);  //de-mirror WRAM
+   if(auto result = platform->cheat(address)) return *result;
+ 
+diff --git a/ares/sfc/memory/memory.cpp b/ares/sfc/memory/memory.cpp
+index 8625902..e63c469 100644
+--- a/ares/sfc/memory/memory.cpp
++++ b/ares/sfc/memory/memory.cpp
+@@ -3,6 +3,7 @@
+ namespace ares::SuperFamicom {
+ 
+ Bus bus;
++void (*ares_bus_read_hook)(u32 address) = nullptr;
+ 
+ Bus::~Bus() {
+   if(lookup) delete[] lookup;
+diff --git a/ares/sfc/memory/memory.hpp b/ares/sfc/memory/memory.hpp
+index 6107f2c..e1a3264 100644
+--- a/ares/sfc/memory/memory.hpp
++++ b/ares/sfc/memory/memory.hpp
+@@ -21,6 +21,7 @@ struct AbstractMemory {
+ #include "writable.hpp"
+ #include "protectable.hpp"
+ 
++extern void (*ares_bus_read_hook)(u32 address);   //(headless probe: CPU/DMA reads)
+ struct Bus {
+   //inline.hpp
+   static auto mirror(u32 address, u32 size) -> u32;

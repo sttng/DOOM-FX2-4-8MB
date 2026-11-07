@@ -1,0 +1,15 @@
+{
+ "_comment": "sections only the GSU reads: window B (file $400000-$5FFFFF, GSU banks $40-$5F); every other section goes to window A (LoROM, CPU and GSU).  Glob patterns.",
+ "_comment2": "level parts: *_A (BSP, areas, vertexes, segs, faces), *_J (REJECT in ROM); *_R (the level RAM image, copied to GSU RAM $71 by the GSU) is either: window B, or window A when B is full",
+ "E[1-4]M[1-9]_A": "gsu",
+ "MAP[0-3][0-9]_A": "gsu",
+ "E[1-4]M[1-9]_J": "gsu",
+ "MAP[0-3][0-9]_J": "gsu",
+ "E[1-4]M[1-9]_R": "either",
+ "MAP[0-3][0-9]_R": "either",
+ "IMAGES": "gsu",
+ "SINCOS": "gsu",
+ "RLSCNPIXSCALE": "gsu",
+ "WALLS": "gsu",
+ "RL_FONT_DATA": "gsu"
+}

@@ -4,8 +4,8 @@ mk2mb.py - cut a data set down to a 2 MB ROM: only some level slots stay in the 
 (the others get `!use<slot> #= 0`), tools/wad2rl.py finalize sizes the RAM tables
 (!RLMAX...) for the maps that are left, and data/regions.json (a copy of
 tools/regions-2mb.json) makes the main line's ROM 2 MB (the gsu-8mb branch's
-layout.py does not read it: the ROM is the 8 MB file).  `make shareware` and
-`make demo` run it.
+layout.py does not read it: the ROM is the 8 MB file).  `make shareware` runs
+it.
 
 shareware: turn a DOOM data set (the cartridge levels, or E1M1-E1M9
 converted from the shareware DOOM1.WAD) into the shareware set: only the
@@ -28,15 +28,6 @@ the Episode 1 maps never use (the cartridge's PIPE4, ROCKRED3, STARG2: not in
 the shareware WAD) is built from the texture the maps use most on it
 (PIPE2, REDWALL1, STARG3), at that texture's size.
 
-demo: turn a DOOM II data set (`make doom2 WAD=DOOM2.WAD`) into the
-demo data set: only the first N maps (default 3: MAP01-MAP03) stay in the
-ROM, the game ends after the last of them.
-
-  python3 tools/mk2mb.py demo [--maps N]    (works on data/, then: make)
-
-The next/secret chain of the last map points past the last slot (the end,
-as MAP30 in the full game).  (New Game always starts MAP01: the DOOM II sets
-have no episode menu.)
 """
 import argparse, collections, json, os, re, shutil, sys
 
@@ -102,29 +93,14 @@ def shareware(a, txt, inc):
     print('shareware: %s kept, %d slots left out, E1M8 ends the game' % (' '.join(slots[:KEEP]), n - KEEP))
 
 
-def demo(a, txt, inc):
-    if not re.search(r'^!RLEPISODELEN = 99', txt, re.M):
-        sys.exit('%s is not a DOOM II data set (make doom2 WAD=DOOM2.WAD first)' % inc)
-    slots = re.findall(r'^!lvl\d+ = (\w+)$', txt, re.M)
-    n, keep = len(slots), a.maps
-    upd = {}
-    for i in range(n):                          # MAP01 -> MAP02 -> ... -> last kept map -> the end
-        upd['lvlnext%d' % i] = upd['lvlsecret%d' % i] = i + 1 if i + 1 < keep else n
-    cut_down(upd, slots, keep)
-    print('demo: %s kept (%s), %d slots left out' % (
-        ' '.join(slots[:keep]), ' '.join('MAP%02d' % (i + 1) for i in range(keep)), n - keep))
-
-
 def main():
     ap = argparse.ArgumentParser(description='cut a data set down to a 2 MB ROM')
     sub = ap.add_subparsers(dest='set', required=True)
     s = sub.add_parser('shareware', help='DOOM: Episode 1')
     s.add_argument('--wad', help='DOOM1.WAD: re-source the walls whose own texture the maps do not use')
-    d = sub.add_parser('demo', help='DOOM II: the first maps')
-    d.add_argument('--maps', type=int, default=3)
     a = ap.parse_args()
     inc = os.path.join(wadlevels.LEV, 'levels.inc')
-    {'shareware': shareware, 'demo': demo}[a.set](a, open(inc).read(), inc)
+    {'shareware': shareware}[a.set](a, open(inc).read(), inc)
 
 
 if __name__ == '__main__':

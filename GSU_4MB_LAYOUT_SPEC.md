@@ -1,8 +1,8 @@
 # A Super FX ROM layout with 4 MB of GSU-reachable ROM (ares + sd2snes)
 
 This document describes a ROM layout for Super FX (GSU) SNES games that need more than the
-2 MB a real GSU2 is known to address. It runs on both **ares** and **sd2snes** as of the time of writing. 
-Everything below was verified on both targets with a marker test ROM: each address in the tables was
+2 MB a real GSU2 can address, and that runs on both **ares** and **sd2snes**. Everything
+below was verified on both targets with a marker test ROM: each address in the tables was
 read on real ares and real sd2snes, and the results are listed in section 10. Accesses
 outside what is described here are either untested or known to behave differently on the
 two targets.

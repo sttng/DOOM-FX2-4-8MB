@@ -1,8 +1,9 @@
 # DOOM for the Super Nintendo / Super FX 2 (GSU-2) with The Ultimate DOOM
 #
-#   make data FX3=<THE ULTIMATE DOOM.sfc> WAD=<DOOM.WAD> [SRC=<DOOM-FX source>]
+#   make data FX3=<THE ULTIMATE DOOM.sfc> WAD=<DOOM.WAD> [SRC=<DOOM-FX source>] [LEARN=1]
 #                        - the data set (tools/mkdata.py) -> gamedata-fx3, linked as data; the DOOM-FX
 #                          source files it needs come from tools/doomfx-src unless SRC= names another copy
+#                          (the WAD conversion rules from tools/rules; LEARN=1: learned from the cartridge)
 #   make                 - assemble build/doom.sfc (tools/build.sh)
 #   make wadlevels WAD=<DOOM.WAD> [PWAD=<x.wad>] [MAPS="E1M1 E1M2"] [ZOKUMBSP=<path>] [REBUILD=1] [PROFILE=doom2]
 #                        - levels converted from a WAD (tools/wadlevels.py, tools/wad2rl.py), then build;
@@ -22,9 +23,6 @@
 #                        - DOOM II / TNT / Plutonia on a copy of a data set (see the doom2 target)
 #   make shareware WAD=<DOOM1.WAD> [ZOKUMBSP=<path>]
 #                        - the shareware ROM (Episode 1, 2 MB) on a copy of a DOOM data set
-#   make demo WAD=<DOOM2.WAD>
-#                        - DOOM II demo: MAP01-MAP03 (a 2 MB set), with the WAD's music converted
-#                          (on a copy of a DOOM II data set)
 #   make wadmusic WAD=<x.WAD>
 #                        - the WAD's music (title, intermission, the levels' songs) converted for
 #                          the SPC700 driver (tools/music/wad2music.py), then build
@@ -37,7 +35,7 @@ PYTHON ?= python3
 PNGMENUS ?= 1
 MENUS = $(if $(PNGMENUS),$(PYTHON) tools/menus.py retouch --data data,@true)
 
-.PHONY: shareware demo doom2 all rom data wadlevels fx3levels wadgfx fx3gfx wadart fx3art wadsfx fx3sfx wadmusic clean distclean
+.PHONY: shareware doom2 all rom data wadlevels fx3levels wadgfx fx3gfx wadart fx3art wadsfx fx3sfx wadmusic clean distclean
 
 all: rom
 
@@ -47,7 +45,7 @@ rom:
 	bash tools/build.sh
 
 data:
-	$(PYTHON) tools/mkdata.py --fx3 "$(FX3)" --wad "$(WAD)" $(if $(SRC),--src "$(SRC)") --out gamedata-fx3
+	$(PYTHON) tools/mkdata.py --fx3 "$(FX3)" --wad "$(WAD)" $(if $(SRC),--src "$(SRC)") $(if $(LEARN),--learn) --out gamedata-fx3
 	ln -sfn gamedata-fx3 data
 
 wadlevels:
@@ -108,16 +106,6 @@ shareware:
 	$(MENUS)
 	$(PYTHON) tools/wad2soundfx.py convert --data data --wad "$(WAD)" --drop-missing
 	$(PYTHON) tools/wad2cut.py --data data --wad "$(WAD)" --weapons Fist,Pistol,ShotGun,ChainSaw,ChainGun,Rocket
-	@mkdir -p build
-	bash tools/build.sh
-
-# DOOM II demo: MAP01-MAP03 only, a 2 MB set (tools/mk2mb.py demo), on a copy of a DOOM II data set,
-# with DOOM2.WAD's music (tools/music/wad2music.py; on the gsu-8mb branch every set gets its WAD's music: make wadmusic)
-demo:
-	@test -n "$(WAD)" || { echo "usage: make demo WAD=<DOOM2.WAD>"; exit 1; }
-	@grep -q '^!RLEPISODELEN = 99' data/RLLEV/levels.inc || { echo "data is not a DOOM II data set: make doom2 WAD=DOOM2.WAD first"; exit 1; }
-	$(PYTHON) tools/mk2mb.py demo
-	$(PYTHON) tools/music/wad2music.py convert --data data --wad "$(WAD)"
 	@mkdir -p build
 	bash tools/build.sh
 

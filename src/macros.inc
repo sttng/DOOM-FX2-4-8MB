@@ -267,7 +267,8 @@ endmacro
 ;
 macro EXMYMAC(lvl)
 ;
-;	BSP, AREAS, VERTEXES, SEGS, FACES (GamePak ROM, one bank)
+;	BSP, AREAS, VERTEXES, SEGS (window B, one bank; FACES is in the
+;	window A part below, which both the GSU and the CPU read)
 ;
 	%section(<lvl>_A)
 <lvl>BSP:
@@ -291,14 +292,10 @@ macro EXMYMAC(lvl)
 		incbin "data/RLLEV/<lvl>/SEGS"
 	endif
 <lvl>SEGSE:
-<lvl>FACES:
-	if !{use<lvl>} != 0
-		incbin "data/RLLEV/<lvl>/FACES"
-	endif
 ;
-;	SECTORS, DOORS, STAIRS, FLOORS, CEILINGS, LIFTS (window A: the CPU reads
-;	them too), and a copy of FACES for the CPU (rllines.asm _RLInitLineData:
-;	the level part above is in window B, which only the GSU reads)
+;	SECTORS, DOORS, STAIRS, FLOORS, CEILINGS, LIFTS and FACES (window A: the
+;	CPU reads them too).  The GSU reads FACES here, in the SECTORS bank
+;	(EMFACESB = EMSECTORS+2), so they do not count against the one bank above.
 ;
 	%section(<lvl>_B)
 <lvl>SECTORS:
@@ -330,6 +327,7 @@ macro EXMYMAC(lvl)
 	if !{use<lvl>} != 0
 		incbin "data/RLLEV/<lvl>/LIFTS"
 	endif
+<lvl>FACES:
 <lvl>FACESC:
 	if !{use<lvl>} != 0
 		incbin "data/RLLEV/<lvl>/FACES"

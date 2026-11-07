@@ -2,8 +2,9 @@
 """
 wadnodes.py - make a PC map's renderer data smaller for the engine
 
-The engine reads a level's BSP, AREAS, VERTEXES, SEGS and FACES through one
-bank byte, so together they must fit one 64 KB ROM bank.  The SNES team cut
+The engine reads a level's BSP, AREAS, VERTEXES and SEGS through one bank
+byte, so together they must fit one 64 KB ROM bank (FACES is in window A with
+the sectors, GSU_4MB_LAYOUT_SPEC.md).  The SNES team cut
 big maps down by hand; for E4M8 they merged look-alike sectors (223 -> 155)
 and rebuilt the BSP.  This tool does the same automatically:
 
@@ -13,7 +14,10 @@ and rebuilt the BSP.  This tool does the same automatically:
      sound).  The lines between them then have the same sector on both sides
      and draw nothing.
   2. rebuild the nodes with ZokumBSP (-ni: no segs for those lines; they
-     stay in LINEDEFS for collision and triggers).
+     stay in LINEDEFS for collision and triggers.  -np=b: node picks that
+     split fewer segs and make fewer subsectors.  -nb: no back seg for a
+     two-sided line whose back sector is closed (floor = ceiling) and never
+     moves: nobody stands in such a sector, so that side is never seen).
 
 Writes a PWAD with the new map, to be given to wad2rl.py after the IWAD.
 
@@ -27,7 +31,7 @@ sys.path.insert(0, HERE)
 import wad2rl   # noqa: E402
 
 LUMPS = ['THINGS', 'LINEDEFS', 'SIDEDEFS', 'VERTEXES', 'SEGS', 'SSECTORS', 'NODES', 'SECTORS', 'REJECT', 'BLOCKMAP']
-ZOKUM_OPTS = ['-b-', '-nq', '-np=u']   # keep BLOCKMAP; rebuild NODES and REJECT
+ZOKUM_OPTS = ['-b-', '-nq', '-np=b', '-nb']   # keep BLOCKMAP; rebuild NODES and REJECT
 INVISIBLE = '-ni'     # no segs for two-sided lines with the same sector on both sides
 SOUNDBLOCK = 0x40
 
@@ -110,8 +114,8 @@ def pack_pwad(name, lumps):
 
 
 def onebank_size(wads, mapname):
-    """bytes of BSP+AREAS+VERTEXES+SEGS+FACES as wad2rl.py writes them (run with --pvs wad
-    and without --walls/--masked, so FACES is approximate); None if the map does not convert"""
+    """bytes of BSP+AREAS+VERTEXES+SEGS as wad2rl.py writes them (run with --pvs wad);
+    None if the map does not convert"""
     out = tempfile.mkdtemp()
     cmd = [sys.executable, os.path.join(HERE, 'wad2rl.py'), 'convert', '--pvs', 'wad',
            '--tables', os.path.join(os.path.dirname(HERE), 'data', 'wad2rl.json'), '--out', out]
@@ -122,7 +126,7 @@ def onebank_size(wads, mapname):
         d = os.path.join(out, mapname)
         if not os.path.exists(os.path.join(d, 'BSP')):     # (NOT CONVERTED: too many sectors...)
             return None
-        return sum(os.path.getsize(os.path.join(d, k)) for k in ('BSP', 'AREAS', 'VERTEXES', 'SEGS', 'FACES'))
+        return sum(os.path.getsize(os.path.join(d, k)) for k in ('BSP', 'AREAS', 'VERTEXES', 'SEGS'))
     finally:
         shutil.rmtree(out, ignore_errors=True)
 

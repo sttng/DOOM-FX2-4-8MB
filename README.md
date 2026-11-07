@@ -68,6 +68,9 @@ from their WADs, and a ROM of the shareware DOOM wad.
   * Every monster of a level is created: the object table is sized from the
     level data (`!RLMAXMOBJECTS`); the original left out up to 78 monsters on
     Ultra-Violence (E1M6).
+  * Impassible two-sided lines (windows, fences) block the player and
+    monsters from both sides; the original checked them only from the right side.
+    Projectiles still pass, as on the PC.
   * The player gets less hung up on walls: when a move and its slide
     along the wall are both blocked (door frames, steps, walls made of
     several lines), the move is tried along X only and Y only, as the PC's
@@ -92,11 +95,10 @@ Requirements:
 - [ZokumBSP](https://github.com/zokum-no/zokumbsp) (used commit`22af6de`)
 - FX3 "THE ULTIMATE DOOM.sfc" rom dump
 
-Converting maps from WADs is done with
-[ZokumBSP](https://github.com/zokum-no/zokumbsp) (used commit
-`22af6de`; `ZOKUMBSP=<path>` or `$ZOKUMBSP`) to rebuild the nodes of maps that
-do not fit (*Node rebuilds* below): the DOOM II, TNT and Plutonia sets need it.
-Without it, such a map keeps the cartridge's version or is left out.
+Converting maps from WADs needs
+[ZokumBSP](https://github.com/zokum-no/zokumbsp) (used commit `22af6de`;
+on the PATH, or `ZOKUMBSP=<path>` / `$ZOKUMBSP`): it rebuilds the nodes of
+every converted map (*Node rebuilds* below).
 
 ```sh
 make data FX3="THE ULTIMATE DOOM.sfc" WAD=DOOM.WAD   # -> gamedata-fx3/, linked as data/
@@ -133,7 +135,7 @@ cartridge again instead, and `rules.py check` compares the result with
 `tools/rules/`.
 
 ```sh
-make wadlevels WAD=DOOM.WAD [MAPS="E1M6 E3M5"] [ZOKUMBSP=...]   # make fx3levels
+make wadlevels WAD=DOOM.WAD [MAPS="E1M6 E3M5"]                 # make fx3levels
 make wadgfx    WAD=DOOM.WAD [PWAD=x.wad]                        # make fx3gfx
 make wadart    WAD=DOOM.WAD                                     # make fx3art
 make wadsfx    WAD=DOOM.WAD [FULL=1]                            # make fx3sfx
@@ -148,11 +150,15 @@ make wadsfx    WAD=DOOM.WAD [FULL=1]                            # make fx3sfx
   sector, and it is much tighter than the WAD's. Converted maps match the FX3
   levels to 98–100 % in every field (`wad2rl.py compare`) except the upper
   and lower textures of two-sided lines (42 % and 49 %).
-* **Node rebuilds** (`wadnodes.py`, ZokumBSP at commit `22af6de`): only where
-  needed — a map whose BSP, areas, vertexes, segs and faces exceed one 64 KB
-  bank is rebuilt without invisible segs and with look-alike sectors merged,
-  and when the GamePak ROM is full the map that gains most is rebuilt. If a
-  map still does not fit, it keeps the cartridge version.
+* **Node rebuilds** (`wadnodes.py`, ZokumBSP at commit `22af6de`): every
+  converted map gets new nodes (`-np=b`: node picks that split fewer segs and
+  make fewer subsectors; `-nb`: no back side for lines whose back sector is
+  closed and never moves). Nothing visible changes, and the maps get smaller.
+  A map whose BSP, areas, vertexes and segs still exceed one 64 KB bank
+  is rebuilt without invisible segs and with look-alike sectors merged, and
+  when the ROM is full the map that gains most is rebuilt. If a map still
+  does not fit, it keeps the cartridge version (DOOM II, TNT, Plutonia: it is
+  left out).
 * **Walls and sprites** (`wad2gfx.py`): the PC art in the SNES palette, with
   the cartridge's size savings learned per wall and sprite. Wall columns are
   shared with the most similar column of the same wall until the strips fit
@@ -214,11 +220,11 @@ make wadsfx    WAD=DOOM.WAD [FULL=1]                            # make fx3sfx
 
 ```sh
 cp -a gamedata-fx3 gamedata-doom2 && ln -sfn gamedata-doom2 data     # each set in its own copy
-make doom2 WAD=DOOM2.WAD ZOKUMBSP=<zokumbsp>                     # 32 maps
+make doom2 WAD=DOOM2.WAD                                         # 32 maps
 make doom2 WAD=TNT.WAD NAMES=tnt BANK3F=0x6000 MASKED=65536 MASKEDBANKS=3C \
-    MASKEDMAPS=MAP01,MAP02,MAP03,MAP04,MAP05,MAP06,MAP07,MAP08,MAP10,MAP11,MAP12,MAP13,MAP14,MAP15,MAP17,MAP24,MAP25,MAP28 ZOKUMBSP=...  # 18 of 32 maps
+    MASKEDMAPS=MAP01,MAP02,MAP03,MAP04,MAP05,MAP06,MAP07,MAP08,MAP10,MAP11,MAP12,MAP13,MAP14,MAP15,MAP17,MAP24,MAP25,MAP26,MAP28,MAP32  # 20 of 32 maps
 make doom2 WAD=PLUTONIA.WAD NAMES=plutonia BANK3F= MASKED=65536 MASKEDBANKS=29 \
-    MASKEDMAPS=MAP01,MAP02,MAP03,MAP04,MAP05,MAP06,MAP07,MAP08,MAP09,MAP10,MAP11,MAP12,MAP13,MAP14,MAP15,MAP16,MAP17,MAP18,MAP19,MAP20,MAP21,MAP24,MAP25,MAP26,MAP27,MAP31,MAP32 ZOKUMBSP=...  # 27 of 32 maps
+    MASKEDMAPS=MAP01,MAP02,MAP03,MAP04,MAP05,MAP06,MAP07,MAP08,MAP09,MAP10,MAP11,MAP12,MAP13,MAP14,MAP15,MAP16,MAP17,MAP18,MAP19,MAP20,MAP21,MAP22,MAP24,MAP25,MAP26,MAP27,MAP30,MAP31,MAP32  # 29 of 32 maps
 ```
 
 * **Maps** in the first 32 level slots as one sequence (`!RLEPISODELEN =
@@ -261,11 +267,12 @@ make doom2 WAD=PLUTONIA.WAD NAMES=plutonia BANK3F= MASKED=65536 MASKEDBANKS=29 \
   (`MASKEDBANKS`, of `$3C $39 $29 $23 $27 $2B`: the one their maps leave
   emptiest; a second one cost each a map), the rest comes out of the walls;
   `MASKEDMAPS` counts only the maps that fit. DOOM II has 15 masked
-  textures, TNT 13, Plutonia 12; left out (used on few sides): DOOM II
+  textures, TNT 16, Plutonia 12; left out (used on few sides): DOOM II
   SKSPINE2 BFALL1 BIGBRIK2 SP_FACE2 PIPE4 TEKBRON1, TNT FIREBLU1 BSTONE2
-  BROWN96 ROCK4 BRNSMAL2 GSTFONT2 METAL METAL5 PIPE2 SP_ROCK1 BRONZE2 METAL2,
-  Plutonia FIRELAV2 A-BROCK2 FIRELAVA BRWINDOW A-CAMO4 A-DBRI2 A-BRICK1
-  STONE6 A-BRBRK2 BIGBRIK1. Animated ones show their first frame.
+  GSTFONT3 BROWN96 ROCK2 MARBFAC2 ROCK4 BRNSMAL2 GSTFONT2 METAL METAL5 PIPE2
+  SP_ROCK1 BRONZE2 METAL2, Plutonia FIRELAV2 SKSPINE2 A-BROCK2 FIRELAVA
+  METAL BRWINDOW A-CAMO4 A-DBRI2 A-BRICK1 DBRAIN1 PIPE2 STONE6 A-BRBRK2
+  BIGBRIK1. Animated ones show their first frame.
 * **Score screen:** the WAD's `INTERPIC` behind every level (`wad2art.py
   --interpic`), no map and no level markers; no DOOM episode text between
   maps (MAP09, 18, 27), only at the end of the game. The finished level's
@@ -280,10 +287,10 @@ Plutonia MAP06, 09, 11, 13, 18, 25, 26, 27):
 | Set | Left out | Why |
 |---|---|---|
 | TNT | MAP09, 16, 18, 19, 22, 31 | over 255 sectors after merging (sector numbers are bytes) |
-| TNT | MAP20, 21, 27, 31 | level RAM image over 43 KB |
-| TNT | MAP23, 26, 29, 30, 32 | BSP/areas/vertexes/segs/faces over one 64 KB bank |
-| Plutonia | MAP22, 23, 28, 30 | over one 64 KB bank (MAP22, 30: by under 120 bytes) |
-| Plutonia | MAP29 | level RAM image over 43 KB |
+| TNT | MAP20, 21, 27, 29, 31 | level RAM image over 43 KB |
+| TNT | MAP23, 30 | BSP/areas/vertexes/segs over one 64 KB bank |
+| Plutonia | MAP23 | BSP/areas/vertexes/segs over one 64 KB bank |
+| Plutonia | MAP28, 29 | level RAM image over 43 KB |
 
 The game skips empty level slots.
 
@@ -313,7 +320,7 @@ the shareware `DOOM1.WAD` (v1.9).
 
 ```sh
 cp -a gamedata-fx3 gamedata-shareware && ln -sfn gamedata-shareware data   # a copy of a DOOM data set (make data)
-make shareware WAD=DOOM1.WAD ZOKUMBSP=<zokumbsp>
+make shareware WAD=DOOM1.WAD
 ```
 
 * `tools/mk2mb.py shareware` keeps the nine Episode 1 slots, makes E1M8 end the
@@ -346,7 +353,8 @@ for your own use.
 
 * Sectors: 255 per map (look-alike sectors are merged above that).
 * BSP nodes and areas: 1664 each (`MaxRLVisNodes`/`MaxRLVisAreas`).
-* BSP, areas, vertexes, segs and faces of a map: one 64 KB GamePak bank.
+* BSP, areas, vertexes and segs of a map: one 64 KB bank (window B). The
+  faces are in window A with the sector data, where the GSU reads them too.
 * Level RAM image (LINES, BLOCKMAP, OBJECTS, REJECT): 43 KB; REJECT moves to
   the GamePak ROM when the rest needs the room.
 * Fixed objects: 180 per map (`MaxRLFObjects`). Movable objects: sized per
@@ -362,7 +370,18 @@ for your own use.
 
 ## Speed
 
-What makes the renderer hopefully faster than the original's:
+Frame times at the real Super FX clock (MesenCE, Hurt Me Plenty, the
+`test/det_suite.sh` input with `dettest.py --gsuclock 100`, 600 rendered
+frames):
+
+| level | VBlanks per frame | fps |
+|---|---|---|
+| E1M1 | 3.37 | 17.8 |
+| E3M5 | 3.44 | 17.5 |
+| E4M2 | 5.37 | 11.2 |
+| E4M8 | 5.52 | 10.9 |
+
+What makes the renderer faster than the original's:
 
 * **Wall band buffer:** walls are drawn 8 pixels wide into a buffer and
   plotted row by row, so the pixel cache never reads back the screen.
@@ -402,17 +421,18 @@ ROM size `$0D`, 128 KB GSU RAM in the extended header), laid out as
 
 | file offset | CPU | GSU | contents |
 |---|---|---|---|
-| `$000000-$1FFFFF` | `$00-$3F:8000` | `$00-$3F` (LoROM) | **window A**: CPU code, GSU code, walls and sprite strips, colour maps, sector data, level RAM tables, music, menus, pictures, weapon graphics, status bar, save code |
+| `$000000-$1FFFFF` | `$00-$3F:8000` | `$00-$3F` (LoROM) | **window A**: CPU code, GSU code, walls and sprite strips, colour maps, sector data and faces, level RAM tables, music, menus, pictures, weapon graphics, status bar, save code |
 | `$200000-$3FFFFF` | – | – | unused (`$FF`) |
-| `$400000-$5FFFFF` | – | `$40-$5F` | **window B**: the level parts the GSU reads from ROM (BSP, areas, vertexes, segs, faces; REJECT when it stays in ROM), the level RAM images, sprite tables, sine/cosine and pixel-scale tables, wall table, font |
+| `$400000-$5FFFFF` | – | `$40-$5F` | **window B**: the level parts the GSU reads from ROM (BSP, areas, vertexes, segs; REJECT when it stays in ROM), the level RAM images, sprite tables, sine/cosine and pixel-scale tables, wall table, font |
 | `$600000-$7FFFFF` | – | – | unused (`$FF`) |
 
 The CPU reads ROM only at `$00-$3F:8000-FFFF` (window A, 32 KB pages): its
 code, data and DMA sources are assembled for LoROM, and nothing it reads
 crosses a page (the music chunks: `musicpage.py`). Window B is the GSU's
 alone; the GSU copies a level's RAM image from there to `$71:0000` at level
-start, and the sector data the CPU reads too (with a copy of the faces) is
-in window A. `tools/regions.json` lists the window B sections; every other
+start, and the sector data and faces, which the CPU reads too, are in
+window A (the GSU reads the faces there, in the sector data's bank, so they
+do not count against the 64 KB bank of the other level parts). `tools/regions.json` lists the window B sections; every other
 section goes to window A. The GSU reads window A sections at their LoROM
 addresses, so a table both read has one address.
 

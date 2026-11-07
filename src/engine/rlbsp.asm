@@ -46,7 +46,7 @@
 
 
 
-	%align_pad(8, 16, (_RLBuildBSP-_RLBSPNode)&$0F)	; align 16,(_RLBuildBSP-_RLBSPNode)&$0f
+	%align_pad(9, 16, (_RLBuildBSP-_RLBSPNode)&$0F)	; align 16,(_RLBuildBSP-_RLBSPNode)&$0f
 ;
 ;	* * * * * * *       BUILD AREA/SEGMENT LIST FROM BSP NODES       * * * * * * *
 ;

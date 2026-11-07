@@ -202,9 +202,7 @@ _RLEM5200:
 ;	* * * * * * *       OPEN DOOR       * * * * * * *
 ;
 _RLEM6000:
-	ibt r0,#lo16(EMBSP+2)	; Bank of EM Data
-	assert (lo16(EMBSP+2))&$FFFF < $80 || (lo16(EMBSP+2))&$FFFF >= $FF80, "ibt: value does not fit a signed byte"
-	ldb (r0)
+	lms r0,(EMFACESB&$FFFF)	; Bank of FACES (window A)
 	romb
 ;	from	r2				; LINE_TYPE = 1 (DOOR ENEMIES CAN OPEN)?
 ;;	to	r0

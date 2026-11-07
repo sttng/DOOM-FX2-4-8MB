@@ -38,7 +38,7 @@
 ;
 ;	* * * * * * *       REALITY_ENGINE MOVE RLOBJECT XY       * * * * * * *
 ;
-	%align_pad(7, 16, (_RM3XY10000-_RM3XY2000)&$0F)	; align 16,(_RM3XY10000-_RM3XY2000)&$0f
+	%align_pad(5, 16, (_RM3XY10000-_RM3XY2000)&$0F)	; align 16,(_RM3XY10000-_RM3XY2000)&$0f
 ;
 ;	>>>   FINISHED SCANNING MOVESECTORS   <<<
 ;

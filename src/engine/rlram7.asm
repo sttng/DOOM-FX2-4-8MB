@@ -153,7 +153,8 @@ EMNUMLINES:	%ds(1*2)	; Number of LINES
 EMNUMSEGS:	%ds(1*2)	; Number of SEGS
 EMFACES:	%ds(1*2)	; Pointer to FACES
 ;
-EMSECTORS:	%ds(1*4)	; Pointer to SECTORS
+EMSECTORS:	%ds(1*2)	; Pointer to SECTORS
+EMFACESB:	%ds(1*2)	; (EMSECTORS+2) Bank of SECTORS, and (this port) of FACES (window A)
 EMNUMSECTORS:	%ds(1*2)	; Number of SECTORS
 EMOBJECTS:	%ds(1*2)	; Pointer to OBJECTS
 EMBLOCKMAP:	%ds(1*2)	; Pointer to BLOCKMAP

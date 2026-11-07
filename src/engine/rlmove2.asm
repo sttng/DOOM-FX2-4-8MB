@@ -24,7 +24,7 @@
 	!rFace = r5	; Line Face
 	!rHighFloor = !rAngle	; Highest Floor Height
 	!rLowCeiling = !rFace	; Lowest Ceiling Height
-	!rBSPB = r7	; Bank of BSP/VERTEXES/LINES/FACES
+	!rBSPB = r7	; Bank of BSP/VERTEXES (FACES: EMFACESB)
 	!rMoveLinesPtr = r8	; Pointer to MoveLines List
 	!rLineBase = r9	; Base of LINES
 	!rVertexBase = r10	; Base of VERTEXES
@@ -116,7 +116,7 @@ _RM2XY2000:
 ;
 ;	>>>   MOVE TO LINE   <<<
 ;
-	from !rBSPB	; Bank of EM Data (VERTEXES/FACES are in ROM)
+	from !rBSPB	; Bank of EM Data (VERTEXES are in ROM)
 	romb
 	from r2	; Move to LineData
 ;	to	r0
@@ -255,7 +255,7 @@ _RM2XY2000:
 	stb (!rMoveLinesPtr)
 	inc !rMoveLinesPtr
 ;
-	from !rBSPB	; Move to Line Face
+	lms r0,(EMFACESB&$FFFF)	; Bank of FACES (window A)
 	romb
 ;
 	getb

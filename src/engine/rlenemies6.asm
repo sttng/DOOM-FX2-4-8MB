@@ -32,7 +32,7 @@
 ;
 ;	* * * * * * *       ENEMIES BIRTHING       * * * * * * *
 ;
-	%align_pad(8, 16, (_RLEB10000-_RLEnemiesBirthAlign)&$0F)	; align 16,(_RLEB10000-_RLEnemiesBirthAlign)&$0f
+	%align_pad(9, 16, (_RLEB10000-_RLEnemiesBirthAlign)&$0F)	; align 16,(_RLEB10000-_RLEnemiesBirthAlign)&$0f
 
 ;
 ;	>>>   FINISHED ENEMIES BIRTHS   <<<

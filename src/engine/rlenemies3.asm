@@ -38,7 +38,7 @@
 ;
 ;	* * * * * * *       ENEMIES TARGETTING       * * * * * * *
 ;
-	%align_pad(10, 16, (_RLE3T10000-_RLEnemiesTarget3Align)&$0F)	; align 16,(_RLE3T10000-_RLEnemiesTarget3Align)&$0f
+	%align_pad(5, 16, (_RLE3T10000-_RLEnemiesTarget3Align)&$0F)	; align 16,(_RLE3T10000-_RLEnemiesTarget3Align)&$0f
 ;
 ;	>>>   FINISHED ENEMIES TARGETTING   <<<
 ;

@@ -683,9 +683,7 @@ _RLE2T5700:
 	to r6
 	getbh
 ;
-	ibt r0,#lo16(EMBSP+2)	; Bank of EM Data
-	assert (lo16(EMBSP+2))&$FFFF < $80 || (lo16(EMBSP+2))&$FFFF >= $FF80, "ibt: value does not fit a signed byte"
-	ldb (r0)
+	lms r0,(EMFACESB&$FFFF)	; Bank of FACES (window A)
 	romb	; Set ROM Bank
 	move r14,r2	; Move to FACE.SECTORNEAR
 ;
@@ -727,6 +725,9 @@ _RLE2T6000:
 	to r1
 	add r2
 	getb	; R0 = SectorFar
+	lms r4,(EMBSP+2&$FFFF)	; back to the Bank of EM Data (the next segments)
+	from r4
+	romb
 ;	with	r0
 	%umult_i(rlsdSize)
 	with r2	; R2 = SectorFarData.Ceiling

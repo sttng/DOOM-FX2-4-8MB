@@ -43,7 +43,7 @@
 	!rVSegEnd = r13	; Pointer to End of VisibleSegmentList
 
 
-	%align_pad(12, 16, (_BV3L9000-_BV3L2000)&$0F)	; align 16,(_BV3L9000-_BV3L2000)&$0f
+	%align_pad(14, 16, (_BV3L9000-_BV3L2000)&$0F)	; align 16,(_BV3L9000-_BV3L2000)&$0f
 
 ;
 ;	* * * * * * *       FINISHED CALCULATING VSEGMENTS' TEXTURES       * * * * * * *
@@ -76,10 +76,7 @@ _RLBuildVSegList3:
 	iwt !rRLWallsTable,#lo16(RLWallsTable)	; RLWallsTable
 	ibt !rRLWallsTableB,#bank(RLWallsTable)
 ;
-	ibt r0,#lo16(EMBSP+2)	; Bank of EM FACES Data
-	assert (lo16(EMBSP+2))&$FFFF < $80 || (lo16(EMBSP+2))&$FFFF >= $FF80, "ibt: value does not fit a signed byte"
-	to !rEMFACESB
-	ldb (r0)
+	lms !rEMFACESB,(EMFACESB&$FFFF)	; Bank of FACES (window A)
 	from !rEMFACESB
 	romb
 

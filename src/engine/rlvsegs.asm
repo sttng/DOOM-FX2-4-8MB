@@ -240,10 +240,7 @@ _BV1L6500:
 	getb
 	inc r14
 ;
-	ibt r1,#lo16(EMBSP+2)	; Bank of EM Data
-	assert (lo16(EMBSP+2))&$FFFF < $80 || (lo16(EMBSP+2))&$FFFF >= $FF80, "ibt: value does not fit a signed byte"
-	to r1
-	ldb (r1)
+	lms r1,(EMFACESB&$FFFF)	; Bank of FACES (window A)
 ;
 	with r4	; R4 = Inverse Value
 	getbh

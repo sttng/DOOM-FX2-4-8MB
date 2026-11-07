@@ -45,7 +45,7 @@
 	!rVSegEnd = r13	; Pointer to End of VisibleSegmentList
 
 
-	%align_pad(13, 16, (_BV2L9000-_BV2L2200)&$0F)	; align 16,(_BV2L9000-_BV2L2200)&$0f
+	%align_pad(15, 16, (_BV2L9000-_BV2L2200)&$0F)	; align 16,(_BV2L9000-_BV2L2200)&$0f
 
 ;
 ;	* * * * * * *       FINISHED VSEGMENTS' FLAGS/HEIGHTS       * * * * * * *

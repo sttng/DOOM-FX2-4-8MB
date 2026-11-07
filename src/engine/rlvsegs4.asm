@@ -505,8 +505,7 @@ _BML2100:
 	inc !rMask
 	inc !rMask
 ;	>>>   FACE: MASKED TEXTURE INDEX / Y OFFSET   <<<
-	ibt r0,#lo16(EMBSP+2)	; Bank of EM FACES Data
-	ldb (r0)
+	lms r0,(EMFACESB&$FFFF)	; Bank of FACES (window A)
 	romb
 	ibt r0,#(rlvFace-rlvFlags)
 	add !rVSeg

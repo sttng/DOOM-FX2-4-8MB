@@ -1,13 +1,14 @@
-# Brief: building a Super FX ROM with 4 MB of GSU-reachable ROM (ares + sd2snes)
+# A Super FX ROM layout with 4 MB of GSU-reachable ROM (ares + sd2snes)
 
-You are implementing a Super FX (GSU) SNES ROM that is larger than the 2 MB a real GSU2
-can address. It must run on **ares** and on **sd2snes**. Everything below was verified on
-both targets with a marker test ROM: each address in the tables was read on real ares and
-real sd2snes, and every result matched. Follow these rules exactly; anything outside them is
-untested or known to differ between the two targets.
+This document describes a ROM layout for Super FX (GSU) SNES games that need more than the
+2 MB a real GSU2 is known to address. It runs on both **ares** and **sd2snes** as of the time of writing. 
+Everything below was verified on both targets with a marker test ROM: each address in the tables was
+read on real ares and real sd2snes, and the results are listed in section 10. Accesses
+outside what is described here are either untested or known to behave differently on the
+two targets.
 
-This layout does **not** work on MiSTer or on real GSU2 hardware (both wrap at 2 MB). Treat
-it as an ares/sd2snes-only format.
+The layout does **not** work on MiSTer or on real GSU2 hardware, which both wrap at 2 MB.
+It is an ares/sd2snes-only format.
 
 ## 1. The core idea
 
@@ -16,43 +17,46 @@ The ROM file is **exactly 8 MB** (8,388,608 bytes). Only two 2 MB regions are us
 | File offset | Name | Who can read it |
 |---|---|---|
 | 0x000000–0x1FFFFF | **Window A** | SNES CPU and GSU |
-| 0x200000–0x3FFFFF | unused | nobody: fill with padding ($FF) |
-| 0x400000–0x5FFFFF | **Window B** | **GSU only** (portable rule) |
-| 0x600000–0x7FFFFF | unused | nobody: fill with padding ($FF) |
+| 0x200000–0x3FFFFF | unused | nobody (padding, $FF) |
+| 0x400000–0x5FFFFF | **Window B** | **GSU only** (the CPU's view differs between targets) |
+| 0x600000–0x7FFFFF | unused | nobody (padding, $FF) |
 
 That gives 4 MB of GSU-reachable ROM: 2 MB shared with the CPU plus 2 MB for the GSU only.
 
 ## 2. Verified behaviour on both targets
 
-| Access | ares | sd2snes | Use it? |
+| Access | ares | sd2snes | Portable? |
 |---|---|---|---|
 | CPU 00–3F:8000–FFFF | Window A | Window A | **Yes** |
-| CPU 40–5F, 80–BF, C0–DF | Window B | Window A mirror | **No**: targets differ |
+| CPU 40–5F, 80–BF, C0–DF | Window B | Window A mirror | No: the targets differ |
 | GSU `ROMB` $00–$3F + `GETB` | Window A | Window A | **Yes** |
 | GSU `ROMB` $40–$5F + `GETB` | Window B | Window B | **Yes** |
-| GSU `ROMB` $60–$7F | reads $00 | file 6–8 MB | **No**: targets differ |
-| GSU `ROMB` with bit 7 set | bit 7 dropped | bit 7 dropped | **No**: keep bit 7 = 0 |
+| GSU `ROMB` $60–$7F | reads $00 | file 6–8 MB | No: the targets differ |
+| GSU `ROMB` with bit 7 set | bit 7 dropped | bit 7 dropped | Same, but only by dropping the bit |
 | GSU code, PBR $00–$3F | Window A | Window A | **Yes** |
 | GSU code, PBR $40–$5F (`LJMP`) | Window B | Window B | **Yes** |
-| ROMBR read back at $3036 | 7 bits | 7 bits | Don't rely on it |
+| ROMBR read back at $3036 | 7 bits | 7 bits | Only 7 bits come back |
 | VCR at $303B | $04 | $04 | – |
 
-## 3. Hard rules
+## 3. What the layout relies on
 
-1. **The SNES CPU only ever reads ROM in banks $00–$3F, at $8000–$FFFF** (window A). Never read
-   ROM through banks $40–$FF from the CPU. This includes DMA sources and FastROM ($80+)
-   addressing. On sd2snes those banks are mirrors of window A; on ares they are window B.
-2. **The GSU reaches window A only through banks $00–$3F** (LoROM style, 32 KB per bank), and
-   **window B only through banks $40–$5F** (HiROM style, 64 KB per bank).
-3. **Never set ROMBR or PBR to $60 or above**, and never set bit 7. Both targets keep only 7 bits,
-   and $60–$7F behave differently.
-4. **Banks $40–$5F are no longer a mirror of $00–$3F.** On retail Super FX carts and in Nintendo's
-   manual, $40–$5F is the HiROM image of the same 2 MB. Here it is window B. Never reach window A
-   data through a $40+ bank, and never copy retail code that does so without rewriting it.
-5. **If the CPU needs anything from window B** (graphics, tables, text), the GSU must copy it into
-   Game Pak RAM ($70:xxxx) first. The CPU then reads it from RAM or DMAs it from RAM to VRAM.
-6. **The file must be exactly 8 MB.** Both targets derive their address masks from the file size.
-   A smaller file changes the mapping.
+1. **The SNES CPU reads ROM only in banks $00–$3F, at $8000–$FFFF** (window A). Through banks
+   $40–$FF the two targets show the CPU different data: sd2snes mirrors window A there, ares shows
+   window B. That applies to DMA sources and FastROM ($80+) addressing as well, so portable code
+   keeps all of them in $00–$3F.
+2. **The GSU reaches window A through banks $00–$3F** (LoROM style, 32 KB per bank) and
+   **window B through banks $40–$5F** (HiROM style, 64 KB per bank).
+3. **ROMBR and PBR stay below $60, with bit 7 clear.** Both targets keep only 7 bits, and banks
+   $60–$7F behave differently on each.
+4. **Banks $40–$5F are not a mirror of $00–$3F here.** On retail Super FX carts, and in Nintendo's
+   manual, $40–$5F is the HiROM image of the same 2 MB; in this layout it is window B. Window A data
+   is therefore reached only through banks $00–$3F, and retail-style code that reads it through a
+   $40+ bank needs rewriting.
+5. **The CPU gets window B data through Game Pak RAM.** When the CPU needs something from window B
+   (graphics, tables, text), the GSU copies it into Game Pak RAM ($70:xxxx); the CPU then reads it
+   there or DMAs it from RAM to VRAM.
+6. **The file is exactly 8 MB.** Both targets derive their address masks from the file size, so a
+   smaller file maps differently.
 
 ## 4. Address formulas
 
@@ -70,7 +74,7 @@ That gives 4 MB of GSU-reachable ROM: 2 MB shared with the CPU plus 2 MB for the
 - GSU data: `ROMB` with R0 = `0x40 + ((f - 0x400000) >> 16)`, then R14 = `f & 0xFFFF`, then `GETB`.
 - GSU code: PBR = `0x40 + ((f - 0x400000) >> 16)`, PC = `f & 0xFFFF`. Enter with `LJMP`.
 - Pages are **64 KB**, linear.
-- CPU: **no access** (rule 1).
+- CPU: no portable access (point 1 of section 3).
 
 ### Switching code between windows
 
@@ -111,18 +115,19 @@ $48:0100 executed from file offset 0x480100.
 | $FFE0–$FFFF | 0x7FE0 | vectors | RESET → $8000 etc. |
 
 - Checksum = sum of **all 8 MB** of bytes & $FFFF; complement = checksum XOR $FFFF.
-- Before summing, write $FF,$FF,$00,$00 into $FFDC–$FFDF.
+- The sum is taken with $FF,$FF,$00,$00 in $FFDC–$FFDF.
 - This header makes sd2snes select its GSU core (map $20 + chipset $13–$15/$1A).
 - ares sees an unknown ROM and picks its generic `GSU-RAM` board, which produces the ares
-  mapping above. Do not try to match a retail game's checksum or database entry.
+  mapping above. Matching a retail game's checksum or database entry would select that game's
+  board instead.
 - 64 KB ($FFBD = $06) and 128 KB ($FFBD = $07) are both verified on ares and sd2snes. With 128 KB,
   banks 70 and 71 are separate for the CPU and the GSU, and the battery save covers all 128 KB.
 
 ## 6. Game Pak RAM
 
-- 64 KB at **$70:0000–$70:FFFF**. Use `RAMB` with R0 = 0 (RAMBR = $70).
+- 64 KB at **$70:0000–$70:FFFF**, selected with `RAMB` and R0 = 0 (RAMBR = $70).
 - With $FFBD = $07, bank **$71** adds another 64 KB (`RAMB` with R0 = 1). Verified on ares and
-  sd2snes. With $FFBD = $06, don't use bank $71: it mirrors $70.
+  sd2snes. With $FFBD = $06, bank $71 mirrors $70.
 - The CPU also sees the first 8 KB at $00–$3F:$6000–$7FFF.
 - Back-up RAM (banks $78–$79, BRAMR) and the manual's CPU-only "Super NES CPU ROM" (from 80:8000)
   are **not usable**: sd2snes doesn't implement them, and ares has no board for them.
@@ -130,19 +135,19 @@ $48:0100 executed from file offset 0x480100.
 ## 7. Running the GSU (standard protocol, unchanged)
 
 1. The CPU sets PBR ($3034), SCBR ($3038), CFGR ($3037), CLSR ($3039) while the GSU is idle.
-2. **The CPU must execute from WRAM while the GSU owns ROM.** Copy a small stub to WRAM
-   (e.g. $00:0200) and jump there. The stub does the following:
-   - writes SCMR ($303A) with RON (bit 4) and/or RAN (bit 3) set, plus the screen-mode bits you need;
+2. **The CPU runs from WRAM while the GSU owns ROM**, usually from a small stub copied there
+   (e.g. to $00:0200). The stub:
+   - writes SCMR ($303A) with RON (bit 4) and/or RAN (bit 3) set, plus the screen-mode bits in use;
    - writes R15 low byte to $301E, then high byte to $301F, which starts the GSU;
    - polls SFR ($3030) bit 5 (GO) until it reads 0;
    - writes SCMR with RON/RAN cleared;
    - jumps back to ROM.
 3. While the GSU owns ROM, the CPU sees fixed vectors: NMI → $00:0108, IRQ → $00:010C,
-   COP → $00:0104, BRK/others → $00:0100. If interrupts stay enabled during GSU runs, place `JML`
-   handlers in WRAM at those addresses. The verified test ran with interrupts disabled (`SEI`,
-   $4200 = 0) and CFGR = $80 (GSU IRQ masked).
-4. End every GSU program with `STOP` followed by `NOP`. Put a couple of `NOP`s between a RAM store
-   and `STOP`.
+   COP → $00:0104, BRK/others → $00:0100. With interrupts enabled during GSU runs, `JML`
+   handlers in WRAM at those addresses take them. The verified test ran with interrupts disabled
+   (`SEI`, $4200 = 0) and CFGR = $80 (GSU IRQ masked).
+4. A GSU program ends with `STOP` followed by `NOP`; a couple of `NOP`s between a RAM store and
+   `STOP` give the store time to finish.
 
 ## 8. GSU opcodes used in the verified test (no Super FX assembler needed)
 
@@ -159,17 +164,17 @@ $48:0100 executed from file offset 0x480100.
 | `LJMP Rn` (after ALT1, n = 8–13) | `90+n` |
 | `NOP` / `STOP` | `01` / `00` |
 
-Set ROMBR (`ROMB`) **before** writing R14: a write to R14 starts the ROM buffer fetch, and `ROMB`
-alone does not. A 65816 assembler (e.g. ca65 from cc65) handles the CPU side; emit GSU opcodes as
-bytes from macros if no Super FX assembler is available.
+ROMBR (`ROMB`) is set **before** R14 is written: a write to R14 starts the ROM buffer fetch, and
+`ROMB` alone does not. A 65816 assembler (e.g. ca65 from cc65) handles the CPU side; without a
+Super FX assembler, the GSU opcodes can be emitted as bytes from macros.
 
 ## 9. Building the image
 
-1. Assemble the CPU code and window A content into the first 2 MB, laid out as LoROM.
-2. Create an 8 MB buffer filled with $FF and copy window A to offset 0.
-3. Place window B content at offset 0x400000.
-4. Leave 0x200000–0x3FFFFF and 0x600000–0x7FFFFF as $FF.
-5. Fix the header checksum over the full 8 MB.
+1. The CPU code and window A content are assembled into the first 2 MB, laid out as LoROM.
+2. An 8 MB buffer filled with $FF receives window A at offset 0,
+3. and window B content at offset 0x400000.
+4. 0x200000–0x3FFFFF and 0x600000–0x7FFFFF stay $FF.
+5. The header checksum is computed over the full 8 MB.
 
 ## 10. Verifying on the targets
 
@@ -189,7 +194,6 @@ were the observed results:
 | G4 | GSU `ROMB $C8` | A2 | A2 |
 | G5 | GSU code at PBR $48 | B2 (window B) | B2 |
 | ROMBR | read back after `ROMB $C8` | 48 | 48 |
-
 | R1 | CPU 70:0100 after writing $70 / $71 to banks 70 / 71 | 70 | 70 |
 | R2 | CPU 71:0100 | 71 | 71 |
 | R3 | GSU `RAMB 0` store, CPU reads 70:0010 | C0 | C0 |
@@ -197,10 +201,12 @@ were the observed results:
 | R5 | CPU 00:6100 (8 KB mirror of 70:0100) | 70 | 70 |
 | B1, B2 | boot counters in banks 70 / 71 after a reload | 2, 2 | 2, 2 |
 
-Rows C1, G1, G2 and G5 are the ROM guarantees this layout relies on. The other ROM rows show why the
-rules in section 3 exist. R1–R5 and B1/B2 confirm 128 KB of separate RAM, saved in full.
+Rows C1, G1, G2 and G5 are the ROM behaviour this layout relies on. The other ROM rows show where
+the targets differ, which is behind the points in section 3. R1–R5 and B1/B2 confirm 128 KB of separate RAM, saved in full.
 
-## 11. Things not verified (avoid or test first)
+## 11. Not verified
+
+These were not covered by the test ROM; they may work, but have not been checked on both targets.
 
 - CPU DMA directly from ROM while the GSU runs (the normal GSU rule applies: the CPU has no ROM
   access while RON = 1).

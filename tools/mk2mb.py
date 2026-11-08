@@ -4,7 +4,7 @@ mk2mb.py - cut a data set down to a 2 MB ROM: only some level slots stay in the 
 (the others get `!use<slot> #= 0`), tools/wad2rl.py finalize sizes the RAM tables
 (!RLMAX...) for the maps that are left, and data/regions.json (a copy of
 tools/regions-2mb.json) makes the main line's ROM 2 MB (the gsu-8mb branch's
-layout.py does not read it: the ROM is the 8 MB file).  `make shareware` runs
+layout.py does not read it: the ROM is the 8 MB file).  `make swset` (make shareware) runs
 it.
 
 shareware: turn a DOOM data set (the cartridge levels, or E1M1-E1M9

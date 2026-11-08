@@ -1,5 +1,10 @@
 # DOOM for the Super Nintendo / Super FX 2 (GSU-2) with The Ultimate DOOM
 #
+# One ROM per game (after make data; each in its own copy gamedata-<game>, written to roms/):
+#   make doomfx WAD=<DOOM.WAD>          make doom2 WAD=<DOOM2.WAD>        make tnt WAD=<TNT.WAD>
+#   make plutonia WAD=<PLUTONIA.WAD>    make shareware WAD=<DOOM1.WAD>
+#
+# The steps:
 #   make data FX3=<THE ULTIMATE DOOM.sfc> WAD=<DOOM.WAD> [SRC=<DOOM-FX source>] [LEARN=1]
 #                        - the data set (tools/mkdata.py) -> gamedata-fx3, linked as data; the DOOM-FX
 #                          source files it needs come from tools/doomfx-src unless SRC= names another copy
@@ -18,17 +23,17 @@
 #   make wadsfx WAD=<DOOM.WAD> [PWAD=<x.wad>] [FULL=1]
 #                        - sound effects converted from a WAD (tools/wad2soundfx.py), then build
 #   make fx3sfx          - back to the cartridge sound effects
-#   make doom2 WAD=<DOOM2.WAD|TNT.WAD|PLUTONIA.WAD> [NAMES=tnt|plutonia] [BANK3F=n] [MASKED=n]
+#   make doom2set WAD=<DOOM2.WAD|TNT.WAD|PLUTONIA.WAD> [NAMES=tnt|plutonia] [BANK3F=n] [MASKED=n]
 #              [MASKEDBANKS=3C,..] [MASKEDMAPS=MAP01,..] [WALLS=vq|rle]
-#                        - DOOM II / TNT / Plutonia on a copy of a data set (see the doom2 target)
-#   make shareware WAD=<DOOM1.WAD>
-#                        - the shareware ROM (Episode 1, 2 MB) on a copy of a DOOM data set
+#                        - DOOM II / TNT / Plutonia on a copy of a data set (see the doom2set target)
+#   make swset WAD=<DOOM1.WAD>
+#                        - the shareware set (Episode 1) on a copy of a DOOM data set
 #   make wadmusic WAD=<x.WAD>
 #                        - the WAD's music (title, intermission, the levels' songs) converted for
 #                          the SPC700 driver (tools/music/wad2music.py), then build
 #   make skypng SKY=<1-4> PNG=<128x128.png>
 #                        - a picture as one of the skies (tools/skypng.py; after wadgfx, doom2, shareware), then build
-#   make clean           - remove build/;  make distclean: also data and gamedata-*
+#   make clean           - remove build/;  make distclean: also data, gamedata-* and roms/
 #
 # wadart, fx3art, doom2 and shareware then put in the retouched Pause/Save/Load menus
 # (tools/menus/*.png via tools/menus.py retouch; PNGMENUS= leaves them out).
@@ -39,7 +44,7 @@ ZOKUMBSP ?= zokumbsp
 PNGMENUS ?= 1
 MENUS = $(if $(PNGMENUS),$(PYTHON) tools/menus.py retouch --data data,@true)
 
-.PHONY: skypng shareware doom2 all rom data wadlevels fx3levels wadgfx fx3gfx wadart fx3art wadsfx fx3sfx wadmusic clean distclean
+.PHONY: doomfx doom2 tnt plutonia shareware skypng swset doom2set all rom data wadlevels fx3levels wadgfx fx3gfx wadart fx3art wadsfx fx3sfx wadmusic clean distclean
 
 all: rom
 
@@ -74,8 +79,8 @@ MASKEDMAPS ?=
 # WALLS: vq = wall format 3, 252 walls as 2x4 texel blocks from codebooks (tools/wallvq.py);
 #        rle = wall format 2, 128 walls as run-length strips
 WALLS ?= vq
-doom2:
-	@test -n "$(WAD)" || { echo "usage: make doom2 WAD=<DOOM2.WAD or TNT.WAD> [NAMES=tnt|plutonia] [BANK3F=] [MASKED=n] [MASKEDBANKS=3C,27] [WALLS=vq|rle]"; exit 1; }
+doom2set:
+	@test -n "$(WAD)" || { echo "usage: make doom2set WAD=<DOOM2.WAD or TNT.WAD> [NAMES=tnt|plutonia] [BANK3F=] [MASKED=n] [MASKEDBANKS=3C,27] [WALLS=vq|rle]"; exit 1; }
 	$(PYTHON) tools/wad2gfx.py convert --data data --wad "$(WAD)" --doom2-monsters --bank-1f --extra-banks --map-walls \
 		$(if $(BANK3F),--bank-3f --bank-3f-size $(BANK3F)) --slots-by likeness --boost tools/doom2_wallboost.json \
 		--masked-opaque --masked-budget $(MASKED) $(if $(MASKEDBANKS),--masked-banks "$(MASKEDBANKS)") $(if $(MASKEDMAPS),--masked-maps "$(MASKEDMAPS)") \
@@ -98,8 +103,8 @@ SWMAPS = E1M1 E1M2 E1M3 E1M4 E1M5 E1M6 E1M7 E1M8 E1M9
 # middle textures of two-sided lines (the BRNBIG/BRNSMAL windows): drawn masked, as on the PC;
 # the first wad2gfx.py pass writes MASKED.JSON for the level conversion
 SWMASKED = --masked --masked-opaque --masked-budget 65536
-shareware:
-	@test -n "$(WAD)" || { echo "usage: make shareware WAD=<DOOM1.WAD>"; exit 1; }
+swset:
+	@test -n "$(WAD)" || { echo "usage: make swset WAD=<DOOM1.WAD>"; exit 1; }
 	$(PYTHON) tools/wad2gfx.py convert --data data --wad "$(WAD)" $(SWMASKED)
 	$(PYTHON) tools/wadlevels.py --no-build --wad "$(WAD)" --zokumbsp "$(ZOKUMBSP)" $(SWMAPS)
 	$(PYTHON) tools/mk2mb.py shareware --wad "$(WAD)"
@@ -126,6 +131,53 @@ skypng:
 	$(PYTHON) tools/skypng.py --data data --sky $(SKY) --png "$(PNG)"
 	@mkdir -p build
 	bash tools/build.sh
+
+# One ROM per game: a fresh copy of gamedata-fx3 (make data) as gamedata-<game>, linked as data,
+# the game's conversions (DOOM-FX: the levels, walls, sprites, title and menus of DOOM.WAD on the
+# cartridge set), its WAD's music and reworked skies (tools/skies), then roms/<NAME>.sfc.
+# The settings of each set are the ones its ROM was made with (README).
+TNT_SET = NAMES=tnt BANK3F=0x6000 MASKED=65536 MASKEDBANKS=3C \
+	MASKEDMAPS=MAP01,MAP02,MAP03,MAP04,MAP05,MAP06,MAP07,MAP08,MAP10,MAP11,MAP12,MAP13,MAP14,MAP15,MAP17,MAP24,MAP25,MAP26,MAP28,MAP32
+PLUTONIA_SET = NAMES=plutonia BANK3F= MASKED=65536 MASKEDBANKS=29 \
+	MASKEDMAPS=MAP01,MAP02,MAP03,MAP04,MAP05,MAP06,MAP07,MAP08,MAP09,MAP10,MAP11,MAP12,MAP13,MAP14,MAP15,MAP16,MAP17,MAP18,MAP19,MAP20,MAP21,MAP22,MAP24,MAP25,MAP26,MAP27,MAP30,MAP31,MAP32
+TNT_SKIES = 1:tools/skies/TNT-SKY1.png 2:tools/skies/TNT-SKY2.png 3:tools/skies/TNT-SKY3.png
+PLUTONIA_SKIES = 2:tools/skies/PLUTONIA-SKY2.png
+define newset
+	@test -n "$(WAD)" || { echo "usage: make $(1) WAD=<the game's WAD>"; exit 1; }
+	@test -d gamedata-fx3 || { echo "gamedata-fx3 missing: run make data first"; exit 1; }
+	rm -rf gamedata-$(1) && cp -a gamedata-fx3 gamedata-$(1) && ln -sfn gamedata-$(1) data
+endef
+define finish
+	$(PYTHON) tools/music/wad2music.py convert --data data --wad "$(WAD)"
+	$(foreach s,$(2),$(PYTHON) tools/skypng.py --data data --sky $(word 1,$(subst :, ,$(s))) --png $(word 2,$(subst :, ,$(s)));)
+	@mkdir -p build roms
+	bash tools/build.sh
+	cp build/doom.sfc roms/$(1).sfc && cp build/doom.sym roms/$(1).sym
+	@echo "-> roms/$(1).sfc"
+endef
+doomfx:
+	$(call newset,doomfx)
+	$(PYTHON) tools/wad2gfx.py convert --data data --wad "$(WAD)"
+	$(PYTHON) tools/wad2art.py convert --data data --wad "$(WAD)" --cart skill
+	$(MENUS)
+	$(PYTHON) tools/wadlevels.py --wad "$(WAD)" --zokumbsp "$(ZOKUMBSP)"
+	$(call finish,DOOM-FX,)
+doom2:
+	$(call newset,doom2)
+	$(MAKE) doom2set WAD="$(WAD)"
+	$(call finish,DOOM2-FX,)
+tnt:
+	$(call newset,tnt)
+	$(MAKE) doom2set WAD="$(WAD)" $(TNT_SET)
+	$(call finish,TNT-FX,$(TNT_SKIES))
+plutonia:
+	$(call newset,plutonia)
+	$(MAKE) doom2set WAD="$(WAD)" $(PLUTONIA_SET)
+	$(call finish,PLUTONIA-FX,$(PLUTONIA_SKIES))
+shareware:
+	$(call newset,shareware)
+	$(MAKE) swset WAD="$(WAD)"
+	$(call finish,DOOM1-SHAREWARE-FX,)
 
 fx3levels:
 	$(PYTHON) tools/wadlevels.py --restore
@@ -174,4 +226,4 @@ clean:
 	rm -rf build
 
 distclean: clean
-	rm -rf data gamedata-*
+	rm -rf data gamedata-* roms

@@ -55,7 +55,8 @@ behind these targets, and how to convert or restore single parts, are in
 * **The Spectre** as a dark see-through shadow.
 * **The Ultimate DOOM cartridge's** controls (circle strafing, walking,
   quicker turning), title menu (New Game / Load Game), screen melt and
-  rumble (LRG rumble controller; not yet tried on a real controller).
+  rumble (LRG rumble controller; not yet tried on a real controller), and
+  its cheats, entered in the pause menu (*Cheats*).
 * **Save games:** three slots in battery-backed RAM.
 * **As on the PC:** falling, Nightmare (respawning, fast monsters, double
   ammo), a start screen like the PC's start-up log, joypad plus mouse.
@@ -80,6 +81,19 @@ Compared with the two cartridges:
   longer writes a stray value to RAM.
 * Changed from The Ultimate DOOM cartridge: E4M6 and E4M8 go on after the
   boss dies, as on the PC (the tagged doors open, the floor lowers).
+
+## Cheats
+
+The three cheats of The Ultimate DOOM cartridge, with its button sequences,
+entered in the pause menu: they do nothing while playing, and take effect
+when the game goes on. Press each button on its own; a wrong one starts that
+cheat over.
+
+| Buttons | Cheat |
+|---|---|
+| R, A, Down ×5, A, L | full ammo, every weapon and key, 200% armor, at least 100% health |
+| L, Right, Right, Down ×5, Left, Left, Down ×4 | invulnerability for 60 seconds |
+| Right, Right, Down, Down, Left ×4, twice | the whole map and the monsters on it, for this level |
 
 ## DOOM II, TNT and Plutonia
 

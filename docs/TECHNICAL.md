@@ -247,7 +247,7 @@ ROM size `$0D`, 128 KB GSU RAM in the extended header), laid out as
 
 | file offset | CPU | GSU | contents |
 |---|---|---|---|
-| `$000000-$1FFFFF` | `$00-$3F:8000` | `$00-$3F` (LoROM) | **window A**: CPU code, GSU code, walls and sprite strips, colour maps, sector data and faces, level RAM tables, music, menus, pictures, weapon graphics, status bar, save code |
+| `$000000-$1FFFFF` | `$00-$3F:8000` | `$00-$3F` (LoROM) | **window A**: CPU code, GSU code, walls and sprite strips, colour maps, sector data and faces, level RAM tables, music, menus, pictures, weapon graphics, status bar, save and cheat code |
 | `$200000-$3FFFFF` | – | – | unused (`$FF`) |
 | `$400000-$5FFFFF` | – | `$40-$5F` | **window B**: the level parts the GSU reads from ROM (BSP, areas, vertexes, segs; REJECT when it stays in ROM), the level RAM images, sprite tables, sine/cosine and pixel-scale tables, wall table, font |
 | `$600000-$7FFFFF` | – | – | unused (`$FF`) |
@@ -293,6 +293,27 @@ can log every ROM read against the map's rules (`ACCESSMAP`).
 * **Code:** `src/engine/savegame.asm`, `src/include/savegame.inc`; menu art by
   `tools/menus.py`.
 
+## Cheats
+
+* **Entry:** the pause menu passes every new joypad state to `CheatPress`
+  (`src/engine/cheats.asm`, from `rlmenus.asm`); each of the three cheats
+  follows its own sequence. A press that continues a cheat already begun is
+  taken by it and does nothing in the menu (A and Down are menu buttons);
+  the first presses (R, L, Right) do nothing there. Only in the main pause
+  menu, with the joypad, and not while dead.
+* **Ammo, weapons, keys:** ammo to the maximum (doubled with the backpack),
+  every weapon the set has (no plasma rifle or BFG in the shareware set; the
+  super shotgun in DOOM II, TNT and Plutonia), the six keys, 200% armor,
+  health raised to 100%. The FX3 cartridge gives 200/50/50/300 ammo and sets
+  the health to 100%.
+* **Invulnerability:** 3600 VBlanks (60 s), as the sphere.
+* **Map:** `ComputerMap` = 2: the computer map, and the automap draws every
+  moving object (the original code for it, disabled in the 1995 source,
+  `rlautomap.asm`). Reset at the next level.
+* **Messages:** "VERY HAPPY AMMO ADDED", "INVULNERABILITY!", "COMPUTER AREA
+  MAP", shown when the game goes on. The FX3 cartridge checks the sequences
+  while playing.
+
 ## Song format
 
 The SPC700 driver (`MUSIC_D.C`, APU `$0700`–`$1EDF`) loads one module per
@@ -335,7 +356,7 @@ doom.asm            master file: mapper, settings, module list
 src/macros.inc      asar replacements for xa/xl features, project macros
 src/layout.inc      section placement (generated)
 src/include/        the original headers + levels.inc, savegame.inc, rumble.inc
-src/engine/         the original modules + savegame.asm, rumble.asm, order.asm;
+src/engine/         the original modules + savegame.asm, cheats.asm, rumble.asm, order.asm;
                     startscreen.asm replaces legal.asm, exmy.asm the e1my/e2my/
                     e3my.asm level modules
 data/               generated game data (not distributed)

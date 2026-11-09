@@ -430,7 +430,7 @@ _SDCL600:
 ;
 _SendDriverCommand:
 ;__SendDriverCommand	equ	((**&$00ff8000)<<1)+(**&$7fff)+$8000
-	__SendDriverCommand = $EF884
+	__SendDriverCommand = $EF890
 	assert (__SendDriverCommand&$FFFFFF) == ((romlo(realbase()))&$FFFFFF), "cached constant __SendDriverCommand is stale (tools/fixup.py)"
 	ldx.w #$2800	; .X = TimeOut Counter
 ;
@@ -456,7 +456,7 @@ _SDC220:
 	; dpr 0
 _SendDriverCommandQuick:
 ;__SendDriverCommandQuick	equ	((**&$00ff8000)<<1)+(**&$7fff)+$8000
-	__SendDriverCommandQuick = $EF89C
+	__SendDriverCommandQuick = $EF8A8
 	assert (__SendDriverCommandQuick&$FFFFFF) == ((romlo(realbase()))&$FFFFFF), "cached constant __SendDriverCommandQuick is stale (tools/fixup.py)"
 	if usePAL == 0
 	ldx.w #40	; .X = TimeOut Counter

@@ -16,7 +16,7 @@
 ;	* * * * * * *       RGB PALETTE DATA BLOCKS       * * * * * * *
 ;
 ;_RLRGBs	equ	((**&$00ff8000)<<1)+(**&$7fff)+$8000
-	_RLRGBs = $EDA6E
+	_RLRGBs = $EDA7A
 	assert (_RLRGBs&$FFFFFF) == ((romlo(realbase()))&$FFFFFF), "cached constant _RLRGBs is stale (tools/fixup.py)"
 
 RLRGBs:

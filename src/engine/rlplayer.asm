@@ -117,10 +117,10 @@ _RLInitPlayer:
 ;
 ;	__ReadJOY: ReadJOY, then ConvertJOY, then RTL (at _ReadJOY)
 ;
-	_ReadJOY = $ECC19
+	_ReadJOY = $ECC25
 	assert (_ReadJOY&$FFFFFF) == ((romlo(realbase()))&$FFFFFF), "cached constant _ReadJOY is stale (tools/fixup.py)"
 	rtl
-	__ReadJOY = $ECC1A
+	__ReadJOY = $ECC26
 	assert (__ReadJOY&$FFFFFF) == ((romlo(realbase()))&$FFFFFF), "cached constant __ReadJOY is stale (tools/fixup.py)"
 	pea.w lo16(_ReadJOY-1)
 	pea.w lo16(_ConvertJOY-1)
@@ -414,7 +414,7 @@ CJY8000:
 	; dbr 0
 	; dpr 0
 	; mode 'AX'
-	_ConvertJOY = $ECDCA
+	_ConvertJOY = $ECDD6
 	assert (_ConvertJOY&$FFFFFF) == ((romlo(realbase()))&$FFFFFF), "cached constant _ConvertJOY is stale (tools/fixup.py)"
 ConvertJOY:
 	lda.w JOY1Stat	; JOY1Status

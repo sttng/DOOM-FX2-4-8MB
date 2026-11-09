@@ -278,7 +278,7 @@ WeaponFrameListSuperShotGun:	; (tools/wad2cut.py)
 ;
 WeaponTypeBitsTable:
 ;	(GSU ROM address of this table, in window A: romlo(file offset))
-	_WeaponTypeBitsTable = $ED1F3
+	_WeaponTypeBitsTable = $ED1FF
 	assert (_WeaponTypeBitsTable&$FFFFFF) == ((romlo(realbase()))&$FFFFFF), "cached constant _WeaponTypeBitsTable is stale (tools/fixup.py)"
 	dw wtbFist	; Fist
 	dw wtbPistol	; Pistol
